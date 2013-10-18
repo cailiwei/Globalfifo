@@ -1,0 +1,4 @@
+
+-keep class com.phicomm.globalfifo.GlobalfifoService {
+	public *;
+}
