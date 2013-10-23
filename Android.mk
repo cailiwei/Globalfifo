@@ -23,6 +23,8 @@ LOCAL_STATIC_JAVA_LIBRARIES := libarity android-support-v4 guava
 
 LOCAL_SRC_FILES := $(call all-java-files-under, src)
 
+LOCAL_SRC_FILES += src/com/phicomm/globalfifo/aidl/IGlobalfifoService.aidl
+
 LOCAL_JNI_SHARED_LIBRARIES := libglobalfifo_jni
 
 LOCAL_REQUIRED_MODULES := libglobalfifo_jni

@@ -1,15 +1,11 @@
 package com.phicomm.globalfifo;
 
-import android.os.ServiceManager;
-import com.phicomm.globalfifo.aidl;
-
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.RemoteException;
 import android.widget.Button;
 import android.widget.TextView;
-import android.widget.EditText;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -18,8 +14,7 @@ import android.view.View.OnClickListener;
 
 public class MainActivity extends Activity {
 	
-	private final static String LOG_TAG = "com.android.globalfifo";
-	private IGlobalfifoService GlobalfifoService = null;
+	private final static String LOG_TAG = "globalfifo";
 
 	private TextView start = null;
 	private TextView content = null;
@@ -56,28 +51,20 @@ public class MainActivity extends Activity {
     class ReadGlobalfifoListener implements OnClickListener{
 		@Override
 		public void onClick(View v) {
-			try {
-					String text = "";
-	    			char[] val = new char[50];
-	    			GlobalfifoService.getVal(val, 50);
-	    			for (int i = 0; i < 50; i++) {
-		    			text = "0x" + val[i] + ",";
-	    			}
-	    			content.setText(text);
-			} catch (RemoteException e) {
-				Log.e(LOG_TAG, "Remote Exception while reading value from device.");
+			String text = "";
+			char[] val = new char[50];
+			Globalfifo.getVal(val, 50);
+			for (int i = 0; i < 50; i++) {
+				text = "0x" + val[i] + ",";
 			}
+			content.setText(text);
 		}   	
     }
     class writeGlobalfifoListener implements OnClickListener{
 		@Override
 		public void onClick(View v) {
-			try {
-     			char[] temp = {1,2,3};
-    			GlobalfifoService.setVal(temp);
-			} catch (RemoteException e) {
-				Log.e(LOG_TAG, "Remote Exception while writing value to device.");
-			}
+			char[] temp = {1,2,3};
+			Globalfifo.setVal(temp);
 		}  	
     }    
     class clearGlobalfifoListener implements OnClickListener{

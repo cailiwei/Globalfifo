@@ -17,86 +17,101 @@
 
 #include "jni.h"
 #include "JNIHelp.h"
-#include "android_runtime/AndroidRuntime.h"
+// #include "android_runtime/AndroidRuntime.h"
+
+#include "globalfifo.h"
 
 #include <utils/misc.h>
 #include <utils/Log.h>
 #include <hardware/hardware.h>
-#include <hardware/globalfifo.h>
 
 #include <stdio.h>
 
-namespace android {
+//namespace android {
+extern "C" struct globalfifo_device_t* globalfifo_device_init();
 
-	struct globalfifo_device_t* globalfifo_device = NULL;
-	static void globalfifo_setVal(JNIEnv* env, jobject clazz, jcharArray buffer) {
-		jchar *array;
-		jint len = env->GetArrayLength(buffer);
+struct globalfifo_device_t* globalfifo_device = NULL;
 
-		if(!globalfifo_device) {
-			ALOGI("Globalfifo JNI: device is not open.");
-			return;
-		}
+static void globalfifo_setVal(JNIEnv* env, jobject clazz, jcharArray buffer) {
+	jchar *array;
+	jint len = env->GetArrayLength(buffer);
 
-		array = env->GetCharArrayElements(buffer, NULL);
-		if (array == NULL) {
-			ALOGE("jni_radio_send: GetCharArrayElements error.");
-		}
-
-		globalfifo_device->set_val(globalfifo_device, (unsigned char *)array, (int)len);
-
-		free(array);
+	if(!globalfifo_device) {
+		ALOGI("Globalfifo JNI: device is not open.");
+		return;
 	}
 
-	static void globalfifo_getVal(JNIEnv* env, jobject clazz, jcharArray buffer, jint count) {
-
-		jchar *array;
-
-		if(!globalfifo_device) {
-			ALOGI("Globalfifo JNI: device is not open.");
-		}
-		array = (jchar *)calloc(count, sizeof(jboolean));
-		if (array == NULL) {
-			ALOGE("jni_radio_recive: calloc error.");
-		}
-		globalfifo_device->get_val(globalfifo_device, (unsigned char*)array, count);
-
-		env->SetCharArrayRegion(buffer, 0, count, array);
-		//		env->ReleaseCharArrayElements(array, 0);
-		free(array);
+	array = env->GetCharArrayElements(buffer, NULL);
+	if (array == NULL) {
+		ALOGE("jni_radio_send: GetCharArrayElements error.");
 	}
 
-	static inline int globalfifo_device_open(const hw_module_t* module, struct globalfifo_device_t** device) {
-		return module->methods->open(module, GLOBALFIFO_HARDWARE_MODULE_ID, (struct hw_device_t**)device);
+	globalfifo_device->set_val(globalfifo_device, (unsigned char *)array, (int)len);
+
+	free(array);
+}
+
+static void globalfifo_getVal(JNIEnv* env, jobject clazz, jcharArray buffer, jint count) {
+
+	jchar *array;
+
+	if(!globalfifo_device) {
+		ALOGI("Globalfifo JNI: device is not open.");
 	}
-
-	static jboolean init_globalfifo_native(JNIEnv* env, jclass clazz) {
-
-		int err;
-		globalfifo_module_t* module;
-
-		err = hw_get_module(GLOBALFIFO_HARDWARE_MODULE_ID, (const struct hw_module_t**)&module);
-		if (err == 0) {
-
-			err = globalfifo_device_open(&(module->common), &globalfifo_device);
-			if (err == 0) {
-				ALOGI("Globalfifo JNI: globalfifo device is open.");
-				return false;
-			}
-		}
-		ALOGE("Globalfifo JNI: failed to open globalfifo device.");
-		return false;		
+	array = (jchar *)calloc(count, sizeof(jboolean));
+	if (array == NULL) {
+		ALOGE("jni_radio_recive: calloc error.");
 	}
+	globalfifo_device->get_val(globalfifo_device, (unsigned char*)array, count);
 
-	static const JNINativeMethod method_table[] = {
-		{"init_globalfifo_native", "()Z", (void*)init_globalfifo_native },
-		{"setVal_native", "([C)V", (void*)globalfifo_setVal },
-		{"getVal_native", "([CI)V", (void*)globalfifo_getVal },
-	};
+	env->SetCharArrayRegion(buffer, 0, count, array);
+	free(array);
+}
 
-	int register_android_server_GlobalfifoService(JNIEnv *env)
-	{
-		return jniRegisterNativeMethods(env, "com/phicomm/globalfifo/GlobalfifoService",
-				method_table, NELEM(method_table));
+static jboolean init_globalfifo_native(JNIEnv* env, jclass clazz) {
+
+	jboolean ret = false;
+
+	globalfifo_device = globalfifo_device_init();
+	if (globalfifo_device != NULL) {
+		ALOGE("Globalfifo JNI: globalfifo device open successed.");
+		ret = true;
 	}
+	return ret;
+}
+
+static const JNINativeMethod method_table[] = {
+	{"init_globalfifo_native", "()Z", (void*)init_globalfifo_native },
+	{"setVal_native", "([C)V", (void*)globalfifo_setVal },
+	{"getVal_native", "([CI)V", (void*)globalfifo_getVal },
 };
+
+int register_android_server_GlobalfifoService(JNIEnv *env)
+{
+	return jniRegisterNativeMethods(env, "com/phicomm/globalfifo/GlobalfifoService",
+			method_table, NELEM(method_table));
+}
+
+/* This function will be call when the library first be load.
+ * You can do some init in the libray. return which version jni it support.
+ */
+jint JNI_OnLoad(JavaVM* vm, void* reserved) {
+	JNIEnv* env = NULL;
+	jint result = -1;
+
+	if (vm->GetEnv((void**) &env, JNI_VERSION_1_4) != JNI_OK) {
+		ALOGE("ERROR: GetEnv failed\n");
+		goto fail;
+	}
+
+	if (register_android_server_GlobalfifoService(env) < 0) {
+		ALOGE("ERROR: FingerPrint native registration failed\n");
+		goto fail;
+	}
+
+	/* success -- return valid version number */
+	result = JNI_VERSION_1_4;
+fail:
+	return result;
+}
+//};

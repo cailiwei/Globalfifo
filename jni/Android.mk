@@ -11,7 +11,7 @@ LOCAL_LDLIBS += -lpthread
 LOCAL_SHARED_LIBRARIES := liblog libcutils libnativehelper
 
 LOCAL_SRC_FILES := com_phicomm_globalfifo_GlobalfifoService.cpp \
-				   globalfifo.c
+				   globalfifo_main.c
 
 LOCAL_MODULE := libglobalfifo_jni
 

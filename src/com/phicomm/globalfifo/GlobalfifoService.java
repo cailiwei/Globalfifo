@@ -15,15 +15,13 @@
 
 package com.phicomm.globalfifo;
 
-import android.content.Context;
-import android.util.Slog;
-import android.os.ServiceManager;
+import android.util.Log;
 
 import com.phicomm.globalfifo.aidl.IGlobalfifoService;
 
 public class GlobalfifoService extends IGlobalfifoService.Stub {
 	
-	private static final String TAG = "GlobalfifoService";
+	private static final String LOG_TAG = "Globalfifo";
 
 	static {
 		try{

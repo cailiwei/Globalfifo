@@ -14,11 +14,11 @@ public class Globalfifo {
 		return err;
 	}
 
-	public void setVal(char[] val) {
+	public static void setVal(char[] val) {
 		globalfifo.setVal(val);
 	}
 
-	public void getVal(char[] val, int count) {
+	public static void getVal(char[] val, int count) {
 		globalfifo.getVal(val, count);
 	}
 }

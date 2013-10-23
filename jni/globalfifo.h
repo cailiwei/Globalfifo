@@ -5,16 +5,16 @@
 __BEGIN_DECLS
 
 /*定义模块ID*/
-#define GLOBALFIFO_HARDWARE_MODULE_ID "globalfifo"
+// #define GLOBALFIFO_HARDWARE_MODULE_ID "globalfifo"
 
 /*硬件模块结构体*/
-struct globalfifo_module_t {
-	struct hw_module_t common;
-};
+//struct globalfifo_module_t {
+//	struct hw_module_t common;
+//};
 
 /*硬件接口结构体*/
 struct globalfifo_device_t {
-	struct hw_device_t common;
+//	struct hw_device_t common;
 	int fd;
 	int (*set_val)(struct globalfifo_device_t* dev, unsigned char* val, int count);
 	int (*get_val)(struct globalfifo_device_t* dev, unsigned char* val, int count);
