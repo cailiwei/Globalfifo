@@ -37,15 +37,15 @@ public class MainActivity extends Activity {
 
         String name = intent.getStringExtra("name");
         if (Globalfifo.init()) {
-            start.setText(name+"，很抱歉，服务启动失败，无法进行读写等操作！"); 
-			Log.e(LOG_TAG, "Globalfifo Service was not started.");
-        } else {	
 		    start.setText(name+", 恭喜您，登陆成功并且服务已启动，你可以进行数据操作了!!!"); 	           		
 		    readButton.setOnClickListener(new ReadGlobalfifoListener());
 		    writeButton.setOnClickListener(new writeGlobalfifoListener());
 		    clearButton.setOnClickListener(new clearGlobalfifoListener());
 		
             Log.i(LOG_TAG, "Globalfifo service Created.");
+        } else {	
+            start.setText(name+"，很抱歉，服务启动失败，无法进行读写等操作！"); 
+			Log.e(LOG_TAG, "Globalfifo Service was not started.");
         }
 	}
     class ReadGlobalfifoListener implements OnClickListener{
