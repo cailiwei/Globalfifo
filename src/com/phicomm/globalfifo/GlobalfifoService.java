@@ -39,14 +39,14 @@ public class GlobalfifoService extends IGlobalfifoService.Stub {
 		return init_globalfifo_native();
 	}
 
-	public void setVal(char[] val) {
-		setVal_native(val);
+	public int setVal(char[] val) {
+		return setVal_native(val);
 	}	
-	public void getVal(char[] val, int count) {
-		getVal_native(val, count);
+	public int getVal(char[] val, int count) {
+		return getVal_native(val, count);
 	}
 
 	private static native boolean init_globalfifo_native();
-	private static native void setVal_native(char[] val);
-	private static native void getVal_native(char[] val, int count);
+	private static native int setVal_native(char[] val);
+	private static native int getVal_native(char[] val, int count);
 };

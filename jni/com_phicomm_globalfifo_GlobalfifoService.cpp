@@ -32,40 +32,79 @@ extern "C" struct globalfifo_device_t* globalfifo_device_init();
 
 struct globalfifo_device_t* globalfifo_device = NULL;
 
-static void globalfifo_setVal(JNIEnv* env, jobject clazz, jcharArray buffer) {
+static jint charToJchar(const unsigned char* src, jchar* dst, jint bufferSize)
+{
+	int32_t len = bufferSize;
+	for (int i = 0; i < len; i++) {
+		*dst++ = *src++;
+	}
+	return len;
+}
+
+static jint globalfifo_setVal(JNIEnv* env, jobject clazz, jcharArray buffer) {
+	int i;
 	jchar *array;
 	jint len = env->GetArrayLength(buffer);
 
 	if(!globalfifo_device) {
 		ALOGI("Globalfifo JNI: device is not open.");
-		return;
+		return -1;
 	}
 
 	array = env->GetCharArrayElements(buffer, NULL);
 	if (array == NULL) {
-		ALOGE("jni_radio_send: GetCharArrayElements error.");
+		ALOGE("Globalfifo JNI: GetCharArrayElements error.");
+	}
+
+	for (i = 0; i < len; i++) {
+		ALOGE("Globalfifo JNI: 0x%02x,", *(array + i));
 	}
 
 	globalfifo_device->set_val(globalfifo_device, (unsigned char *)array, (int)len);
 
 	free(array);
+
+	return 0;
 }
 
-static void globalfifo_getVal(JNIEnv* env, jobject clazz, jcharArray buffer, jint count) {
+static jint globalfifo_getVal(JNIEnv* env, jobject clazz, jcharArray buffer, jint count) {
 
 	jchar *array;
+	int i, j, total_step;
+	unsigned char temp[TOTAL_SIZE];
 
 	if(!globalfifo_device) {
-		ALOGI("Globalfifo JNI: device is not open.");
+		ALOGE("Globalfifo JNI: device is not open.");
 	}
-	array = (jchar *)calloc(count, sizeof(jboolean));
-	if (array == NULL) {
-		ALOGE("jni_radio_recive: calloc error.");
-	}
-	globalfifo_device->get_val(globalfifo_device, (unsigned char*)array, count);
 
+	total_step = globalfifo_device->get_val(globalfifo_device, temp, TOTAL_SIZE);
+
+	array = (jchar *)calloc(total_step, sizeof(jcharArray));
+	if (array == NULL) {
+		ALOGE("Globalfifo JNI: calloc error.");
+	}
+
+	charToJchar(temp, array, total_step);
+	/* Debug the data */
+//	array_num = *array;
+//	ALOGE("Globalfifo JNI: get value %d from device:\n",array_num);
+//	temp = array + *array;
+//	array++;
+//	for (i = 0; i < array_num; i++) {
+//		ALOGD("Array%d[%d]: ", i, *array);
+//		for (j = 0; j < *array++; j++) {
+//			ALOGD("0x%02x,", *temp++);
+//		}
+//		ALOGD("\n");
+//	}
+
+	if (count > total_step) {
+		count = total_step;
+	}
 	env->SetCharArrayRegion(buffer, 0, count, array);
 	free(array);
+
+	return count;
 }
 
 static jboolean init_globalfifo_native(JNIEnv* env, jclass clazz) {
@@ -82,8 +121,8 @@ static jboolean init_globalfifo_native(JNIEnv* env, jclass clazz) {
 
 static const JNINativeMethod method_table[] = {
 	{"init_globalfifo_native", "()Z", (void*)init_globalfifo_native },
-	{"setVal_native", "([C)V", (void*)globalfifo_setVal },
-	{"getVal_native", "([CI)V", (void*)globalfifo_getVal },
+	{"setVal_native", "([C)I", (void*)globalfifo_setVal },
+	{"getVal_native", "([CI)I", (void*)globalfifo_getVal },
 };
 
 int register_android_server_GlobalfifoService(JNIEnv *env)

@@ -12,6 +12,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 
+import java.util.ArrayList;
+
 public class MainActivity extends Activity {
 	
 	private final static String LOG_TAG = "globalfifo";
@@ -51,13 +53,22 @@ public class MainActivity extends Activity {
     class ReadGlobalfifoListener implements OnClickListener{
 		@Override
 		public void onClick(View v) {
-			String text = "";
-			char[] val = new char[50];
-			Globalfifo.getVal(val, 50);
-			for (int i = 0; i < 50; i++) {
-				text = "0x" + val[i] + ",";
+			char[] val = new char[100];
+			int len = Globalfifo.getVal(val, 100);
+			ArrayList<Integer> b = new ArrayList<Integer>((int)val[0]); 
+			for (int i = 0; i < val[0]; i++) {
+				b.add((int)val[i+1]);
 			}
-			content.setText(text);
+			String result = "Read the "+ len +" data:\n";
+			int index = val[0]+2;
+			for (int i = 0; i < val[0]; i++) {
+				result += "Array" + i + "[" + b.get(i) + "] = {";
+				for(int temp = 0; temp < b.get(i); temp++ ) {
+					result += "0x" + Integer.toHexString((int)val[index++]) + ",";
+				}
+				result += "}\n\n";
+			}
+			content.setText(result);
 		}   	
     }
     class writeGlobalfifoListener implements OnClickListener{

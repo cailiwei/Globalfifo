@@ -6,6 +6,7 @@ __BEGIN_DECLS
 
 /*定义模块ID*/
 // #define GLOBALFIFO_HARDWARE_MODULE_ID "globalfifo"
+#define TOTAL_SIZE 		0x100 		/* TODO change the size by self */
 
 /*硬件模块结构体*/
 //struct globalfifo_module_t {

@@ -13,37 +13,24 @@
 #define MODULE_NAME "globalfifo"
 
 static int globalfifo_set_val(struct globalfifo_device_t* dev, unsigned char* val, int count) {
+	int ret = 0;
 
-	ALOGD("Globalfifo Stub: set value %d to device.\n", count);
+	ret = write(dev->fd, val, count);
 
-	write(dev->fd, val, count);
-
-	return 0;
+	return ret;
 }
 
 static int globalfifo_get_val(struct globalfifo_device_t* dev, unsigned char* val, int count) {
 
-	int i, j;
-	unsigned char array_num = 0;
-	unsigned char *temp = 0;
+	int ret = 0;
 
 	if(!val) {
 		ALOGE("Globalfifo Stub: error val pointer.\n");
 		return -EFAULT;
 	}
-	read(dev->fd, val, count);
-	array_num = *val;
-	ALOGD("Globalfifo Stub: get value %d from device:\n",array_num);
-	temp = val + *val;
-	val++;
-	for (i = 0; i < array_num; i++) {
-		ALOGD("Array%d[%d]: ", i, *val);
-		for (j = 0; j < *val++; j++) {
-			ALOGD("0x%02x,", *temp++);	
-		}
-		ALOGD("\n");
-	}
-	return 0;
+	ret = read(dev->fd, val, count);
+
+	return ret;
 }
 
 struct globalfifo_device_t* globalfifo_device_init()
