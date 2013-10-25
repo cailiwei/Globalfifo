@@ -65,13 +65,16 @@
     	android:paddingRight="12dip"
     	android:paddingBottom="10dip"
     	android:orientation="horizontal">
-    <TextView
+    <EditText
         android:id="@+id/content"
         android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:layout_gravity="center"
-        android:paddingBottom="10dip"
-        android:text="@string/content" />
+     	android:layout_height="fill_parent"
+		android:textSize="20px"
+		android:singleLine="false"
+		android:padding="5px"
+        android:scrollbars="vertical"
+        android:inputType="textMultiLine" >
+     </EditText>
     </LinearLayout>
     
 </RelativeLayout>
