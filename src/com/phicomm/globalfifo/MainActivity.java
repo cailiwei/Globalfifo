@@ -24,25 +24,28 @@ public class MainActivity extends Activity {
 	private Button readButton = null;
 	private Button writeButton = null;
 	private Button clearButton = null;	
+	private static boolean status = false;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		// TODO Auto-generated method stub
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.start);
-		Intent intent = getIntent();
 
 		start = (TextView)findViewById(R.id.st);
 		content = (EditText)findViewById(R.id.content);
 		readButton = (Button)findViewById(R.id.read);
 		writeButton = (Button)findViewById(R.id.write);
 		clearButton = (Button)findViewById(R.id.clear);
+
+		Intent intent = getIntent();
         String name = intent.getStringExtra("name");
         if (Globalfifo.init()) {
 		    start.setText(name+", 恭喜您，登陆成功并且服务已启动，你可以进行数据操作了!!!"); 	           		
 		    readButton.setOnClickListener(new ReadGlobalfifoListener());
 		    writeButton.setOnClickListener(new writeGlobalfifoListener());
 		    clearButton.setOnClickListener(new clearGlobalfifoListener());
+			content.setVisibility(View.INVISIBLE);
 		
             Log.i(LOG_TAG, "Globalfifo service Created.");
         } else {	
@@ -53,8 +56,8 @@ public class MainActivity extends Activity {
     class ReadGlobalfifoListener implements OnClickListener{
 		@Override
 		public void onClick(View v) {
-			char[] val = new char[100];
-			int len = Globalfifo.getVal(val, 100);
+			char[] val = new char[4096];
+			int len = Globalfifo.getVal(val, 4096);
 			ArrayList<Integer> b = new ArrayList<Integer>((int)val[0]); 
 			for (int i = 0; i < val[0]; i++) {
 				b.add((int)val[i+1]);
@@ -62,14 +65,19 @@ public class MainActivity extends Activity {
 			String result = "Read the "+ len +" data:\n";
 			int index = val[0]+2;
 			for (int i = 0; i < val[0]; i++) {
-				result += "Array" + i + "[" + b.get(i) + "] = {";
+				result += "Array" + i + "[" + b.get(i) + "] = {\n\t";
 				for(int temp = 0; temp < b.get(i); temp++ ) {
-					result += "0x" + Integer.toHexString((int)val[index++]) + ", ";
+					String str = Integer.toHexString((int)val[index]);
+					if (val[index++] < 16) str = "0" + str;
+					result += "0x" + str + ", ";
+
+					if ((temp+1) % 4 == 0) result += "\n\t";
 				}
-				result += "}\n\n";
+				result += "\n};\n";
 			}
 			content.setText(result);
 			content.setCursorVisible(false);
+			content.setVisibility(View.VISIBLE);
 			content.setMovementMethod(ScrollingMovementMethod.getInstance());
 			content.setSelection(content.getText().length(), content.getText().length());
 			readButton.setEnabled(false);
@@ -78,19 +86,27 @@ public class MainActivity extends Activity {
     class writeGlobalfifoListener implements OnClickListener{
 		@Override
 		public void onClick(View v) {
-//			char[] temp = {1,2,3};
-//			Globalfifo.setVal(temp);
-			readButton.setEnabled(true);
+			if (status) {
+				char[] temp = {1,2,3};
+				Globalfifo.setVal(temp);
+				readButton.setEnabled(true);
+			} else {
+				start.setText("Now you can input data like this:\n 3, 1, 2, 3, 6...");
+				content.setVisibility(View.VISIBLE);
+				content.setFocusable(true);
+				content.setCursorVisible(true);
+				status = true;
+			}
 		}	
     }    
     class clearGlobalfifoListener implements OnClickListener{
 		@Override
 		public void onClick(View v) {
-			start.setText("Now you can input data like this:\n 1, 2, 3...");
-			content.setFocusable(true);
-			content.setCursorVisible(true);
+			content.setVisibility(View.INVISIBLE);
     		String text = "";
     		content.setText(text);
+
+			status = false;
 		}  	
     }
 	

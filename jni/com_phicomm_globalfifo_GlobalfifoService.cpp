@@ -44,6 +44,7 @@ static jint charToJchar(const unsigned char* src, jchar* dst, jint bufferSize)
 static jint globalfifo_setVal(JNIEnv* env, jobject clazz, jcharArray buffer) {
 	int i;
 	jchar *array;
+	unsigned char *temp = NULL;
 	jint len = env->GetArrayLength(buffer);
 
 	if(!globalfifo_device) {
@@ -56,15 +57,18 @@ static jint globalfifo_setVal(JNIEnv* env, jobject clazz, jcharArray buffer) {
 		ALOGE("Globalfifo JNI: GetCharArrayElements error.");
 	}
 
+	temp = (unsigned char *)calloc(len, sizeof(jboolean));
+	if (temp == NULL) {
+		ALOGE("Globalfifo JNI: calloc error.");
+	}
 	for (i = 0; i < len; i++) {
-		ALOGE("Globalfifo JNI: 0x%02x,", *(array + i));
+		*(temp + i) = *(array + i);
 	}
 
-	globalfifo_device->set_val(globalfifo_device, (unsigned char *)array, (int)len);
+	globalfifo_device->set_val(globalfifo_device, temp, (int)len);
 
-	free(array);
-
-	return 0;
+	free(temp);
+	return len;
 }
 
 static jint globalfifo_getVal(JNIEnv* env, jobject clazz, jcharArray buffer, jint count) {
