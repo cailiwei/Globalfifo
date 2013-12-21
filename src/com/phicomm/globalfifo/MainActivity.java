@@ -26,6 +26,15 @@ public class MainActivity extends Activity {
 	private Button clearButton = null;	
 	private static boolean status = false;
 
+    /* Load the .so */
+	static {
+		try{
+			System.loadLibrary("globalfifo_jni");
+		}catch(UnsatisfiedLinkError e){
+			System.err.println("Error:Could not load library Globalfifo_JNI!");
+		}
+	}
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		// TODO Auto-generated method stub

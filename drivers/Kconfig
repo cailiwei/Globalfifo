@@ -1,0 +1,9 @@
+config GLOBALFIFO_ENABLE
+	bool "Turn on GLOBALFIFO dev by default"
+	help
+	  Turns on Globalfifo dev (hardware assisted software
+	  instrumentation based tracing) by default. Otherwise, tracing is
+	  disabled by default but can be enabled via sysfs.
+
+	  For production builds, you should probably say 'N' here to avoid
+	  potential power, performance and memory penalty.

@@ -23,14 +23,6 @@ public class GlobalfifoService extends IGlobalfifoService.Stub {
 	
 	private static final String LOG_TAG = "Globalfifo";
 
-	static {
-		try{
-			System.loadLibrary("globalfifo_jni");
-		}catch(UnsatisfiedLinkError e){
-			System.err.println("Error:Could not load library Globalfifo_JNI!");
-		}
-	}
-
 	public GlobalfifoService() {
 		Log.i(LOG_TAG,"GlobalfifoService constructor()");
 	}

@@ -13,21 +13,8 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "GlobalfifoService"
-
-#include "jni.h"
-#include "JNIHelp.h"
-// #include "android_runtime/AndroidRuntime.h"
-
 #include "globalfifo.h"
 
-#include <utils/misc.h>
-#include <utils/Log.h>
-#include <hardware/hardware.h>
-
-#include <stdio.h>
-
-//namespace android {
 extern "C" struct globalfifo_device_t* globalfifo_device_init();
 
 struct globalfifo_device_t* globalfifo_device = NULL;
@@ -48,18 +35,18 @@ static jint globalfifo_setVal(JNIEnv* env, jobject clazz, jcharArray buffer) {
 	jint len = env->GetArrayLength(buffer);
 
 	if(!globalfifo_device) {
-		ALOGI("Globalfifo JNI: device is not open.");
+		LOGI(" device is not open.");
 		return -1;
 	}
 
 	array = env->GetCharArrayElements(buffer, NULL);
 	if (array == NULL) {
-		ALOGE("Globalfifo JNI: GetCharArrayElements error.");
+		LOGE(" GetCharArrayElements error.");
 	}
 
 	temp = (unsigned char *)calloc(len, sizeof(jboolean));
 	if (temp == NULL) {
-		ALOGE("Globalfifo JNI: calloc error.");
+		LOGE(" calloc error.");
 	}
 	for (i = 0; i < len; i++) {
 		*(temp + i) = *(array + i);
@@ -78,14 +65,14 @@ static jint globalfifo_getVal(JNIEnv* env, jobject clazz, jcharArray buffer, jin
 	unsigned char temp[TOTAL_SIZE];
 
 	if(!globalfifo_device) {
-		ALOGE("Globalfifo JNI: device is not open.");
+		LOGE(" device is not open.");
 	}
 
 	total_step = globalfifo_device->get_val(globalfifo_device, temp, TOTAL_SIZE);
 
 	array = (jchar *)calloc(total_step, sizeof(jcharArray));
 	if (array == NULL) {
-		ALOGE("Globalfifo JNI: calloc error.");
+		LOGE(" calloc error.");
 	}
 
 	charToJchar(temp, array, total_step);
@@ -117,7 +104,7 @@ static jboolean init_globalfifo_native(JNIEnv* env, jclass clazz) {
 
 	globalfifo_device = globalfifo_device_init();
 	if (globalfifo_device != NULL) {
-		ALOGE("Globalfifo JNI: globalfifo device open successed.");
+		LOGE(" Globalfifo device open successed.");
 		ret = true;
 	}
 	return ret;
@@ -131,8 +118,9 @@ static const JNINativeMethod method_table[] = {
 
 int register_android_server_GlobalfifoService(JNIEnv *env)
 {
-	return jniRegisterNativeMethods(env, "com/phicomm/globalfifo/GlobalfifoService",
-			method_table, NELEM(method_table));
+	jobject jYourclass = env->FindClass("com/phicomm/globalfifo/GlobalfifoService");
+	return env->RegisterNatives((_jclass*)jYourclass,  method_table, NELEM(method_table));
+
 }
 
 /* This function will be call when the library first be load.
@@ -143,12 +131,12 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
 	jint result = -1;
 
 	if (vm->GetEnv((void**) &env, JNI_VERSION_1_4) != JNI_OK) {
-		ALOGE("ERROR: GetEnv failed\n");
+		LOGE("ERROR: GetEnv failed.");
 		goto fail;
 	}
 
 	if (register_android_server_GlobalfifoService(env) < 0) {
-		ALOGE("ERROR: FingerPrint native registration failed\n");
+		LOGE("ERROR: Native registration failed.");
 		goto fail;
 	}
 
@@ -157,4 +145,3 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
 fail:
 	return result;
 }
-//};
