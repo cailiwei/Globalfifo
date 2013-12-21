@@ -1,16 +1,5 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <fcntl.h>
-#include <errno.h>
-#include <cutils/log.h>
-#include <cutils/atomic.h>
 
 #include "globalfifo.h"
-
-#define DEVICE_NAME "/dev/param_fifo"
-#define MODULE_NAME "globalfifo"
 
 static int globalfifo_set_val(struct globalfifo_device_t* dev, unsigned char* val, int count) {
 	int ret = 0;
@@ -25,7 +14,7 @@ static int globalfifo_get_val(struct globalfifo_device_t* dev, unsigned char* va
 	int ret = 0;
 
 	if(!val) {
-		ALOGE("Globalfifo Stub: error val pointer.\n");
+		LOGE("Error value pointer.");
 		return -EFAULT;
 	}
 	ret = read(dev->fd, val, count);
@@ -40,14 +29,14 @@ struct globalfifo_device_t* globalfifo_device_init()
 
 	dev = (struct globalfifo_device_t*)malloc(sizeof(struct globalfifo_device_t));
 	if (!dev) {
-		ALOGE("Globalfifo Stub: failed to alloc space.\n");
+		LOGE("Failed to alloc space.");
 		goto fail;
 	}
 	memset(dev, 0, sizeof(struct globalfifo_device_t));
 
 	result = open(DEVICE_NAME, O_RDWR, 0777);
 	if (result < 0) {
-		ALOGE("can't open param_fifo%d",result);
+		LOGE("Can't open param_fifo%d.", result);
 		goto fail;
 	} else {
 		dev->fd = result;

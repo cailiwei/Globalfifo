@@ -17,7 +17,7 @@ import java.util.ArrayList;
 
 public class MainActivity extends Activity {
 	
-	private final static String LOG_TAG = "globalfifo";
+	private final static String LOG_TAG = "Globalfifo";
 
 	private TextView start = null;
 	private EditText content = null;
@@ -25,7 +25,7 @@ public class MainActivity extends Activity {
 	private Button writeButton = null;
 	private Button clearButton = null;	
 	private static boolean status = false;
-
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		// TODO Auto-generated method stub
@@ -41,16 +41,17 @@ public class MainActivity extends Activity {
 		Intent intent = getIntent();
         String name = intent.getStringExtra("name");
         if (Globalfifo.init()) {
-		    start.setText(name+", 恭喜您，登陆成功并且服务已启动，你可以进行数据操作了!!!"); 	           		
+		    start.setText(name + ", 恭喜您，登陆成功并且服务已启动，你可以进行数据操作了!!!"); 	           		
 		    readButton.setOnClickListener(new ReadGlobalfifoListener());
 		    writeButton.setOnClickListener(new writeGlobalfifoListener());
 		    clearButton.setOnClickListener(new clearGlobalfifoListener());
 			content.setVisibility(View.INVISIBLE);
 		
-            Log.i(LOG_TAG, "Globalfifo service Created.");
+            Log.i(LOG_TAG, "Globalfifo service is running.");
         } else {	
-            start.setText(name+"，很抱歉，服务启动失败，无法进行读写等操作！"); 
-			Log.e(LOG_TAG, "Globalfifo Service was not started.");
+            start.setText(name + "，很抱歉，服务启动失败，无法进行读写等操作！"); 
+			Log.e(LOG_TAG, "Globalfifo Service is not started.");
+			content.setVisibility(View.INVISIBLE);
         }
 	}
     class ReadGlobalfifoListener implements OnClickListener{

@@ -26,45 +26,36 @@ public class RegistActivity extends Activity{
 	protected void onCreate(Bundle savedInstanceState) {
 		// TODO Auto-generated method stub
 		super.onCreate(savedInstanceState);        
-		//第一次创建数据库
 		db = UserWay.createDatabase(RegistActivity.this);
 		setContentView(R.layout.regist);
-		//关联控件
+
 		doneButton = (Button)findViewById(R.id.done);
 		cancelButton = (Button)findViewById(R.id.cancel);
 		nameText = (EditText)findViewById(R.id.name);
 		passText = (EditText)findViewById(R.id.code);
-		//设置取消按钮监听器
-		cancelButton.setOnClickListener(new OnClickListener() {
-			
+
+		cancelButton.setOnClickListener(new OnClickListener() {		
 			@Override
 			public void onClick(View v) {
 				finish();
 			}
 		});
-		//设置确定按钮监听器
 		doneButton.setOnClickListener(new doneListener());
 	}
-	//确定按钮监听处理
+	
 	class doneListener implements OnClickListener{
 
 		Users user = new Users();
 		boolean checked = false;
 		@Override
 		public void onClick(View v) {
-			//向SQLite数据库增加一条信息,并结束此Activity
-			//1、先判断注册信息是否重复，如果重复，提示注册失败
-			//2、将注册信息写入数据库，并提示注册成功
-			//3、结束此Activity
-			//封装信息
 			name = nameText.getText().toString();
 			pass = passText.getText().toString();
 			user.setName(name);
 			user.setPass(pass);
-			//写入数据库
-			checked = UserWay.addDatabase(user,db);
+			checked = UserWay.addDatabase(user, db);
 			if (checked){
-				Toast.makeText(RegistActivity.this, "恭喜您，注册成功！请登录", Toast.LENGTH_SHORT).show();
+				Toast.makeText(RegistActivity.this, R.string.login_success, Toast.LENGTH_SHORT).show();
 			}
 			finish();			
 		}	

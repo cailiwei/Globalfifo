@@ -4,7 +4,7 @@ import com.phicomm.globalfifo.GlobalfifoService;
 
 public class Globalfifo {
 	
-	public static GlobalfifoService globalfifo= new GlobalfifoService();
+	public static GlobalfifoService globalfifo = new GlobalfifoService();
 
 	public Globalfifo() {
 	}

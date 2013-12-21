@@ -13,53 +13,40 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "GlobalfifoService"
-
-#include "jni.h"
-#include "JNIHelp.h"
-// #include "android_runtime/AndroidRuntime.h"
-
 #include "globalfifo.h"
 
-#include <utils/misc.h>
-#include <utils/Log.h>
-#include <hardware/hardware.h>
-
-#include <stdio.h>
-
-//namespace android {
-extern "C" struct globalfifo_device_t* globalfifo_device_init();
-
-struct globalfifo_device_t* globalfifo_device = NULL;
+static struct globalfifo_device_t* globalfifo_device = NULL;
+extern struct globalfifo_device_t* globalfifo_device_init();
 
 static jint charToJchar(const unsigned char* src, jchar* dst, jint bufferSize)
 {
 	int32_t len = bufferSize;
-	for (int i = 0; i < len; i++) {
+	int i = 0;
+	for (; i < len; i++) {
 		*dst++ = *src++;
 	}
 	return len;
 }
 
-static jint globalfifo_setVal(JNIEnv* env, jobject clazz, jcharArray buffer) {
+jint Java_com_phicomm_globalfifo_GlobalfifoService_setDevParNative(JNIEnv* env, jobject clazz, jcharArray buffer) {
 	int i;
 	jchar *array;
 	unsigned char *temp = NULL;
-	jint len = env->GetArrayLength(buffer);
+	jint len = (*env)->GetArrayLength(env, buffer);
 
 	if(!globalfifo_device) {
-		ALOGI("Globalfifo JNI: device is not open.");
+		LOGE("Device is not open.");
 		return -1;
 	}
 
-	array = env->GetCharArrayElements(buffer, NULL);
+	array = (*env)->GetCharArrayElements(env, buffer, NULL);
 	if (array == NULL) {
-		ALOGE("Globalfifo JNI: GetCharArrayElements error.");
+		LOGE("GetCharArrayElements error.");
 	}
 
 	temp = (unsigned char *)calloc(len, sizeof(jboolean));
 	if (temp == NULL) {
-		ALOGE("Globalfifo JNI: calloc error.");
+		LOGE("Calloc error.");
 	}
 	for (i = 0; i < len; i++) {
 		*(temp + i) = *(array + i);
@@ -71,21 +58,21 @@ static jint globalfifo_setVal(JNIEnv* env, jobject clazz, jcharArray buffer) {
 	return len;
 }
 
-static jint globalfifo_getVal(JNIEnv* env, jobject clazz, jcharArray buffer, jint count) {
+jint Java_com_phicomm_globalfifo_GlobalfifoService_getDevParNative(JNIEnv* env, jobject clazz, jcharArray buffer, jint count) {
 
 	jchar *array;
 	int i, j, total_step;
 	unsigned char temp[TOTAL_SIZE];
 
 	if(!globalfifo_device) {
-		ALOGE("Globalfifo JNI: device is not open.");
+		LOGE("Globalfifo JNI: device is not open.");
 	}
 
 	total_step = globalfifo_device->get_val(globalfifo_device, temp, TOTAL_SIZE);
 
 	array = (jchar *)calloc(total_step, sizeof(jcharArray));
 	if (array == NULL) {
-		ALOGE("Globalfifo JNI: calloc error.");
+		LOGE("Globalfifo JNI: calloc error.");
 	}
 
 	charToJchar(temp, array, total_step);
@@ -105,28 +92,29 @@ static jint globalfifo_getVal(JNIEnv* env, jobject clazz, jcharArray buffer, jin
 	if (count > total_step) {
 		count = total_step;
 	}
-	env->SetCharArrayRegion(buffer, 0, count, array);
+	(*env)->SetCharArrayRegion(env, buffer, 0, count, array);
 	free(array);
 
 	return count;
 }
 
-static jboolean init_globalfifo_native(JNIEnv* env, jclass clazz) {
+jboolean Java_com_phicomm_globalfifo_GlobalfifoService_initDevNative(JNIEnv* env, jclass clazz) {
 
-	jboolean ret = false;
+	jboolean ret = 0;
 
 	globalfifo_device = globalfifo_device_init();
 	if (globalfifo_device != NULL) {
-		ALOGE("Globalfifo JNI: globalfifo device open successed.");
-		ret = true;
+		LOGE("Globalfifo JNI: globalfifo device open successed.");
+		ret = 1;
 	}
 	return ret;
 }
 
+#if 0
 static const JNINativeMethod method_table[] = {
-	{"init_globalfifo_native", "()Z", (void*)init_globalfifo_native },
-	{"setVal_native", "([C)I", (void*)globalfifo_setVal },
-	{"getVal_native", "([CI)I", (void*)globalfifo_getVal },
+	{"initDevNative", "()Z", (void*)initDevNative },
+	{"setDevParNative", "([C)I", (void*)setDevParNative },
+	{"getDevParNative", "([CI)I", (void*)getDevParNative },
 };
 
 int register_android_server_GlobalfifoService(JNIEnv *env)
@@ -157,4 +145,5 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
 fail:
 	return result;
 }
-//};
+#endif
+

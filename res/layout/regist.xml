@@ -23,6 +23,7 @@
         android:id="@+id/name"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
+        android:inputType="none"
         android:paddingBottom="10dip"
         android:layout_gravity="center"/>
     <TextView
@@ -36,6 +37,7 @@
         android:password="true"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
+        android:inputType="textPassword"
         android:layout_gravity="center"/>
     </LinearLayout>
     
