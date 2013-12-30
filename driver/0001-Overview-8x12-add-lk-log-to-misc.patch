@@ -1,0 +1,229 @@
+From 2cc4cffb68f6c7cb81925ae92460f677ec3ea9f1 Mon Sep 17 00:00:00 2001
+From: "xiaoqiang.he" <xiaoqiang.he@feixun.com.cn>
+Date: Mon, 30 Dec 2013 10:32:03 +0800
+Subject: [PATCH] Overview : 8x12 add lk log to misc
+
+Change-Id: If260357d224ccd87dbdef29d9ea6dc30bcc15fc6
+---
+ app/aboot/aboot.c           |    5 +++
+ app/aboot/recovery.c        |   88 +++++++++++++++++++++++++++++++++++++++++++
+ app/aboot/recovery.h        |    5 +++
+ platform/msm_shared/debug.c |   21 +++++++++++
+ 4 files changed, 119 insertions(+)
+
+diff --git a/app/aboot/aboot.c b/app/aboot/aboot.c
+index cd04cfd..80059b0 100755
+--- a/app/aboot/aboot.c
++++ b/app/aboot/aboot.c
+@@ -2145,11 +2145,13 @@ void aboot_fastboot_register_commands(void)
+ 	{
+ 		fastboot_register("flash:", cmd_flash_mmc);
+ 		fastboot_register("erase:", cmd_erase_mmc);
++		save_debug_message();
+ 	}
+ 	else
+ 	{
+ 		fastboot_register("flash:", cmd_flash);
+ 		fastboot_register("erase:", cmd_erase);
++		save_debug_message();
+ 	}
+ 
+ 	fastboot_register("boot",              cmd_boot);
+@@ -2270,6 +2272,8 @@ void aboot_init(const struct app_descriptor *app)
+ 				#endif
+ 				}
+ 			}
++
++			save_debug_message();
+ 			boot_linux_from_mmc();
+ 		}
+ 		else
+@@ -2279,6 +2283,7 @@ void aboot_init(const struct app_descriptor *app)
+ 		if((device.is_unlocked) || (device.is_tampered))
+ 			set_tamper_flag(device.is_tampered);
+ 	#endif
++			save_debug_message();
+ 			boot_linux_from_flash();
+ 		}
+ 		dprintf(CRITICAL, "ERROR: Could not do normal boot. Reverting "
+diff --git a/app/aboot/recovery.c b/app/aboot/recovery.c
+index 817a6be..b397afe 100644
+--- a/app/aboot/recovery.c
++++ b/app/aboot/recovery.c
+@@ -44,11 +44,19 @@
+ #include "recovery.h"
+ #include "bootimg.h"
+ #include "smem.h"
++#include <config.h>
+ 
+ #define BOOT_FLAGS	1
+ #define UPDATE_STATUS	2
+ #define ROUND_TO_PAGE(x,y) (((x) + (y)) & (~(y)))
+ 
++#define WITH_DEBUG_GLOBAL_RAM 1
++#if WITH_DEBUG_GLOBAL_RAM
++extern char print_buf[];
++extern unsigned int print_idx;
++#define MISC_SKIP_BYTE 10240
++#endif
++
+ static const int MISC_PAGES = 3;			// number of pages to save
+ static const int MISC_COMMAND_PAGE = 1;		// bootloader command is this page
+ static char buf[4096];
+@@ -58,6 +66,7 @@ unsigned boot_into_recovery = 0;
+ extern uint32_t get_page_size();
+ extern void reset_device_info();
+ extern void set_device_root();
++extern int target_is_emmc_boot(void);
+ 
+ int get_recovery_message(struct recovery_message *out)
+ {
+@@ -88,6 +97,85 @@ int get_recovery_message(struct recovery_message *out)
+ 	return 0;
+ }
+ 
++int save_debug_message(void)
++{
++
++#if WITH_DEBUG_GLOBAL_RAM
++	unsigned n = 0;
++	struct save_log_message save_log_cookie;
++
++	if (target_is_emmc_boot()) {
++		char *ptn_name = "misc";
++		unsigned long long ptn_offset = 0;
++		unsigned int index;
++
++		index = partition_get_index((unsigned char *) ptn_name);
++
++		if(INVALID_PTN == index) {
++			dprintf(CRITICAL, "ERROR: Partition index not found\n");
++			return -1;
++		}
++
++		ptn_offset = partition_get_offset(index); 
++
++		dprintf(INFO, "INFO: save the lk log to misc\n");
++		save_log_cookie.flags[0] = 0x6e616670;
++		save_log_cookie.flags[1] = 0x676f6c67;
++		save_log_cookie.length = print_idx;
++
++		memset((void*)SCRATCH_ADDR, 0, 512);
++		memcpy((void*)SCRATCH_ADDR,(void*)&save_log_cookie, sizeof(struct save_log_message));
++
++		/*Save cookie*/
++		if (mmc_write(ptn_offset + MISC_SKIP_BYTE, 512, (void *)SCRATCH_ADDR)) {
++			dprintf(CRITICAL, "ERROR: flash write fail!\n");
++			return -1;
++		}
++		memcpy((void*)SCRATCH_ADDR ,(void *)print_buf, save_log_cookie.length);
++		arch_disable_cache(UCACHE);
++		n = ( save_log_cookie.length / 512 + 1) * 512; 
++
++		if (mmc_write(ptn_offset + MISC_SKIP_BYTE + 512, n, (void *)SCRATCH_ADDR)) {
++			dprintf(CRITICAL, "ERROR: flash write fail!\n");
++			return -1;
++		}
++	}else{
++		struct ptentry *ptn;
++		struct ptable *ptable;
++		unsigned offset = 0;
++		unsigned pagesize = flash_page_size();
++		unsigned pagemask = pagesize -1;
++
++		ptable = flash_get_ptable();
++
++		if (ptable == NULL) {
++			dprintf(CRITICAL, "ERROR: Partition table not found\n");
++			return -1;
++		}
++		ptn = ptable_find(ptable, "FOTA");
++
++		if (ptn == NULL) {
++			dprintf(CRITICAL, "ERROR: No misc partition found\n");
++			return -1;
++		}
++		dprintf(INFO, "INFO: save the lk log to misc\n");
++		save_log_cookie.flags[0] = 0x6e616670;
++		save_log_cookie.flags[1] = 0x676f6c67;
++		save_log_cookie.length = print_idx;
++
++		memcpy((void*)SCRATCH_ADDR,(void*)&save_log_cookie, sizeof(struct save_log_message));
++		memcpy((void*)SCRATCH_ADDR + sizeof(struct save_log_message),(void *)print_buf, save_log_cookie.length);
++		arch_disable_cache(UCACHE);
++		n = ((sizeof(struct save_log_message) + save_log_cookie.length )/pagesize + 1) * pagesize; 
++		if (flash_write(ptn, 0, (void *)SCRATCH_ADDR, n)) {
++			dprintf(CRITICAL, "ERROR: flash write fail!\n");
++			return -1;
++		}
++	}
++#endif
++	return 0;
++}
++ 
+ int set_recovery_message(const struct recovery_message *in)
+ {
+ 	struct ptentry *ptn;
+diff --git a/app/aboot/recovery.h b/app/aboot/recovery.h
+index fa034e0..f9dab51 100644
+--- a/app/aboot/recovery.h
++++ b/app/aboot/recovery.h
+@@ -42,6 +42,10 @@ struct recovery_message {
+ 	char recovery[1024];
+ };
+ 
++struct save_log_message {
++	unsigned flags[2];
++	unsigned length;
++};
+ 
+ struct update_header {
+ 	unsigned char MAGIC[UPDATE_MAGIC_SIZE];
+@@ -83,4 +87,5 @@ int get_ffbm(char *ffbm, unsigned size);
+ 
+ extern unsigned boot_into_recovery;
+ 
++extern int save_debug_message(void);
+ #endif
+diff --git a/platform/msm_shared/debug.c b/platform/msm_shared/debug.c
+index 3349db7..13dbb96 100644
+--- a/platform/msm_shared/debug.c
++++ b/platform/msm_shared/debug.c
+@@ -92,6 +92,16 @@ static void log_putc(char c)
+ }
+ #endif /* WITH_DEBUG_LOG_BUF */
+ 
++#define WITH_DEBUG_GLOBAL_RAM 1
++#define PRINT_BUFF_SIZE (64 * 1024)
++
++#if WITH_DEBUG_GLOBAL_RAM
++#define RESERVE_LOG_MAGIC 0x474F4C52  //"RLOG" in ascii
++//PRINT_BUFF_SIZE moved to debug.h
++char print_buf[PRINT_BUFF_SIZE];
++unsigned int print_idx = 12;
++#endif
++
+ void _dputc(char c)
+ {
+ #if WITH_DEBUG_LOG_BUF
+@@ -112,6 +122,17 @@ void _dputc(char c)
+ #if WITH_DEBUG_JTAG
+ 	jtag_dputc(c);
+ #endif
++#if WITH_DEBUG_GLOBAL_RAM
++	print_buf[print_idx] = c;
++	print_idx++;
++	if (print_idx >= PRINT_BUFF_SIZE) {
++		print_idx = 12;
++	}
++	//update the index to header
++	*(int *)print_buf = RESERVE_LOG_MAGIC;
++	*(int *)(print_buf+4) = PRINT_BUFF_SIZE;
++	*(int *)(print_buf+8) = print_idx;
++#endif
+ }
+ 
+ int dgetc(char *c, bool wait)
+-- 
+1.7.9.5
+

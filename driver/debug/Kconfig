@@ -1,0 +1,2 @@
+config GLOBALFIFO_ENABLE
+	bool "Turn on debug of GLOBALFIFO dev"
